@@ -8,6 +8,7 @@
     <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js"></script>
     <style>
+        /* Add your existing CSS here (no changes made) */
         body {
             font-family: Arial, sans-serif;
             max-width: 600px;
@@ -24,6 +25,56 @@
             padding: 10px;
             margin-bottom: 10px;
             background-color: #fff;
+            position: relative;
+        }
+
+        #placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #999;
+            font-size: 1.2rem;
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        .message.self {
+            align-items: flex-end;
+        }
+
+        .message.other {
+            align-items: flex-start;
+        }
+
+        .message .name {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .message .bubble {
+            max-width: 70%;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            word-wrap: break-word;
+        }
+
+        .message.self .bubble {
+            background-color: #007bff;
+            color: white;
+            text-align: left;
+        }
+
+        .message.other .bubble {
+            background-color: #eaeaea;
+            color: #333;
         }
 
         #input {
@@ -31,8 +82,7 @@
             gap: 10px;
         }
 
-        #input input,
-        #nameInput {
+        #input input {
             flex: 1;
             padding: 10px;
             font-size: 1rem;
@@ -40,8 +90,7 @@
             border-radius: 5px;
         }
 
-        #input button,
-        #nameSection button {
+        #input button {
             padding: 10px;
             font-size: 1rem;
             background-color: #007bff;
@@ -51,13 +100,31 @@
             cursor: pointer;
         }
 
-        #input button:hover,
-        #nameSection button:hover {
+        #input button:hover {
             background-color: #0056b3;
         }
 
         #nameSection {
             margin-bottom: 20px;
+        }
+
+        #nameSection input,
+        #nameSection button {
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+
+        #nameSection button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        #nameSection button:hover {
+            background-color: #0056b3;
         }
 
         #notification {
@@ -82,77 +149,68 @@
         <input id="nameInput" type="text" placeholder="Enter your name..." />
         <button id="nameButton">Set Name</button>
     </div>
-    <div id="messages"></div>
+    <div id="messages">
+        <div id="placeholder">Please enter your name first</div>
+    </div>
     <div id="input">
         <input id="message" type="text" placeholder="Type a message..." disabled />
         <button id="sendButton" disabled>Send</button>
     </div>
 
     <script type="module">
-        // Import Firebase functions
         import {initializeApp} from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import {getDatabase, ref, push, onValue, remove} from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
 
-        // Your Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCH-gSbg0zUxTr-J7m265pxIullx0Xg-qY",
             authDomain: "chat-app-702a4.firebaseapp.com",
             projectId: "chat-app-702a4",
-            storageBucket: "chat-app-702a4.firebasestorage.app",
+            storageBucket: "chat-app-702a4.appspot.com",
             messagingSenderId: "958164357094",
-            appId: "1:958164357094:web:0746729efb1237d0295027"
+            appId: "1:958164357094:web:0746729efb1237d0295027",
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // DOM Elements
-        const messagesDiv = document.getElementById('messages');
-        const messageInput = document.getElementById('message');
-        const nameInput = document.getElementById('nameInput');
-        const sendButton = document.getElementById('sendButton');
-        const nameButton = document.getElementById('nameButton');
-        const notification = document.getElementById('notification');
-        let userName = '';
+        const messagesDiv = document.getElementById("messages");
+        const placeholderDiv = document.getElementById("placeholder");
+        const messageInput = document.getElementById("message");
+        const nameInput = document.getElementById("nameInput");
+        const sendButton = document.getElementById("sendButton");
+        const nameButton = document.getElementById("nameButton");
+        const notification = document.getElementById("notification");
 
-        // Function to display notifications
+        let userName = "";
+
         function showNotification(message, isError = false) {
             notification.textContent = message;
-            notification.className = isError ? 'error' : '';
-            notification.style.display = 'block';
+            notification.className = isError ? "error" : "";
+            notification.style.display = "block";
             setTimeout(() => {
-                notification.style.display = 'none';
-            }, 3000); // Hide after 3 seconds
+                notification.style.display = "none";
+            }, 3000);
         }
 
-        // Function to set the user's name
-        nameButton.addEventListener('click', () => {
+        nameButton.addEventListener("click", () => {
             userName = nameInput.value.trim();
             if (userName) {
-                // Disable the name input and button
                 nameInput.disabled = true;
                 nameButton.disabled = true;
-
-                // Enable the chatbox and send button
                 messageInput.disabled = false;
                 sendButton.disabled = false;
-
-                // Show success notification
-                showNotification('Name set successfully! You can now chat.');
-
-                // Focus on the chat input
-                messageInput.focus();
+                placeholderDiv.style.display = "none";
+                showNotification(`Welcome, ${userName}!`);
+                loadMessages();
             } else {
-                // Show error notification
-                showNotification('Please enter a valid name.', true);
+                showNotification("Please enter a valid name.", true);
             }
         });
 
-        // Function to send a message
-        sendButton.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+        sendButton.addEventListener("click", sendMessage);
+
+        messageInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
                 sendMessage();
             }
         });
@@ -160,48 +218,64 @@
         function sendMessage() {
             const message = messageInput.value.trim();
             if (message && userName) {
-                // Check if the user is an admin and is clearing the chat
-                if (userName.toLowerCase() === 'admin' && message === 'clearchatapp8') {
+                if (userName.toLowerCase() === "admin" && message === "clearchatapp8") {
                     clearChat();
-                    showNotification('Chat cleared successfully.');
-                } else {
-                    const messagesRef = ref(database, 'messages');
-                    push(messagesRef, {
-                        name: userName,
-                        text: message,
-                        timestamp: Date.now()
-                    });
+                    return;
                 }
-                messageInput.value = ''; // Clear the input field
+
+                const messagesRef = ref(database, "messages");
+                push(messagesRef, {
+                    name: userName,
+                    text: message,
+                    timestamp: Date.now(),
+                });
+                messageInput.value = "";
             } else {
-                showNotification('Message cannot be empty.', true);
+                showNotification("Message cannot be empty.", true);
             }
         }
 
-        // Function to clear the chat (admin only)
         function clearChat() {
-            const messagesRef = ref(database, 'messages');
+            const messagesRef = ref(database, "messages");
             remove(messagesRef)
                 .then(() => {
-                    showNotification('Chat cleared successfully.');
+                    showNotification("Chat cleared successfully.");
                 })
                 .catch((error) => {
                     showNotification(`Error clearing chat: ${error.message}`, true);
                 });
         }
 
-        // Listen for new messages and display them
-        const messagesRef = ref(database, 'messages');
-        onValue(messagesRef, (snapshot) => {
-            messagesDiv.innerHTML = ''; // Clear current messages
-            snapshot.forEach((msg) => {
-                const messageData = msg.val();
-                const div = document.createElement('div');
-                div.textContent = `${messageData.name || 'Anonymous'}: ${messageData.text}`;
-                messagesDiv.appendChild(div);
+        function loadMessages() {
+            const messagesRef = ref(database, "messages");
+            let lastSender = null;
+            onValue(messagesRef, (snapshot) => {
+                messagesDiv.innerHTML = "";
+                snapshot.forEach((childSnapshot) => {
+                    const messageData = childSnapshot.val();
+                    const div = document.createElement("div");
+                    div.className = `message ${messageData.name === userName ? "self" : "other"
+                        }`;
+
+                    if (lastSender !== messageData.name) {
+                        const nameDiv = document.createElement("div");
+                        nameDiv.className = "name";
+                        nameDiv.textContent = messageData.name;
+                        div.appendChild(nameDiv);
+                        lastSender = messageData.name;
+                    }
+
+                    const bubble = document.createElement("div");
+                    bubble.className = "bubble";
+                    bubble.textContent = messageData.text;
+
+                    div.appendChild(bubble);
+                    messagesDiv.appendChild(div);
+                });
+
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
             });
-            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to the latest message
-        });
+        }
     </script>
 </body>
 
