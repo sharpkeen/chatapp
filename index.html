@@ -139,6 +139,24 @@
         #notification.error {
             background-color: #dc3545;
         }
+      
+       #emojiPicker {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .emoji-button {
+        font-size: 1.5rem;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .emoji-button:hover {
+        transform: scale(1.2);
+    }
     </style>
 </head>
 
@@ -156,6 +174,18 @@
         <input id="message" type="text" placeholder="Type a message..." disabled />
         <button id="sendButton" disabled>Send</button>
     </div>
+  <div id="emojiPicker">
+    <button class="emoji-button" data-emoji="💀" disabled>💀</button>
+    <button class="emoji-button" data-emoji="😭" disabled>😭</button>
+    <button class="emoji-button" data-emoji="👍" disabled>👍</button>
+    <button class="emoji-button" data-emoji="👎" disabled>👎</button>
+    <button class="emoji-button" data-emoji="🤦‍♀️" disabled>🤦‍♀️</button>
+    <button class="emoji-button" data-emoji="❤️" disabled>❤️</button>
+    <button class="emoji-button" data-emoji="😊" disabled>😊</button>
+    <button class="emoji-button" data-emoji="😡" disabled>😡</button>
+</div>
+
+
 
     <script type="module">
         import {initializeApp} from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
@@ -192,20 +222,36 @@
             }, 3000);
         }
 
+      document.getElementById("emojiPicker").addEventListener("click", (event) => {
+    const button = event.target;
+    if (button.classList.contains("emoji-button")) {
+        const emoji = button.getAttribute("data-emoji");
+        if (emoji) {
+            // Add the emoji to the input box value
+            messageInput.value += emoji;
+        }
+    }
+});
+
+      
         nameButton.addEventListener("click", () => {
-            userName = nameInput.value.trim();
-            if (userName) {
-                nameInput.disabled = true;
-                nameButton.disabled = true;
-                messageInput.disabled = false;
-                sendButton.disabled = false;
-                placeholderDiv.style.display = "none";
-                showNotification(`Welcome, ${userName}!`);
-                loadMessages();
-            } else {
-                showNotification("Please enter a valid name.", true);
-            }
-        });
+    userName = nameInput.value.trim();
+    if (userName) {
+        nameInput.disabled = true;
+        nameButton.disabled = true;
+        messageInput.disabled = false;
+        sendButton.disabled = false;
+        placeholderDiv.style.display = "none";
+        // Enable emoji buttons
+        const emojiButtons = document.querySelectorAll("#emojiPicker .emoji-button");
+        emojiButtons.forEach(button => button.disabled = false);
+        showNotification(`Welcome, ${userName}!`);
+        loadMessages();
+    } else {
+        showNotification("Please enter a valid name.", true);
+    }
+});
+
 
         sendButton.addEventListener("click", sendMessage);
 
